@@ -1,0 +1,1 @@
+This is just my copy of the official aime benchmarking repo where I've added some convenience scripts for myself and sorted some docker/dependency issues on ubuntu 2022.4.  If that's not your environment, just use this as a reference.
