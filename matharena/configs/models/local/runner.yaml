@@ -1,8 +1,8 @@
-model: /home/aikenyon/ai_skills_agents_resources/self-improve-experiments/checkpoints/grpo_ep10_merged
+model: /models/grpo_ep10_merged
 api: custom
 api_key_env: null
 base_url: http://localhost:8000/v1
-max_tokens: 64000
+max_tokens: 60000
 temperature: 0.6
 concurrent_requests: 1
 read_cost: 0

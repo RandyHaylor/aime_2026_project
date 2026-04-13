@@ -1,31 +1,17 @@
 #!/bin/bash
 set -e
-# Edit this default or pass a model path as argument
 DEFAULT_MODEL="/home/aikenyon/ai_skills_agents_resources/self-improve-experiments/checkpoints/grpo_ep10_merged"
+MAX_TOKENS=60000
 
 MODEL=${1:-$DEFAULT_MODEL}
 CONTAINER_MODEL=$(./vllm_docker_scripts/check_model_mounted.sh "$MODEL") || exit 1
 
-# Ensure docker container is running
 if ! docker ps --filter name=gemma4-vllm --format '{{.Names}}' | grep -q gemma4-vllm; then
   echo "Starting vllm container..."
   ./vllm_docker_scripts/start_vllm_container.sh
 fi
 
-cat > /home/aikenyon/aime_2026_project/matharena/configs/models/local/runner.yaml <<EOF
-model: $CONTAINER_MODEL
-api: custom
-api_key_env: null
-base_url: http://localhost:8000/v1
-max_tokens: 64000
-temperature: 0.6
-concurrent_requests: 1
-read_cost: 0
-write_cost: 0
-human_readable_id: $(basename "$MODEL")
-date: "2026-04-12"
-EOF
-
+./matharena_scripts/generate_runner_yaml.sh "$CONTAINER_MODEL" "$(basename "$MODEL")" "$MAX_TOKENS"
 ./vllm_docker_scripts/switch_vllm_mounted_model.sh "$CONTAINER_MODEL"
 
 cd /home/aikenyon/aime_2026_project/matharena
