@@ -1,0 +1,22 @@
+# Model weights
+*.bin
+*.safetensors
+*.gguf
+*.pt
+*.pth
+*.onnx
+
+# venv
+.venv/
+__pycache__/
+*.pyc
+
+# matharena outputs (large zst files)
+matharena/outputs/
+matharena/logs/
+
+# HuggingFace cache
+.cache/
+
+# OS
+.DS_Store
