@@ -1,29 +1,36 @@
 #!/bin/bash
-# Start persistent vllm container
+set -x
+
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+MODELS_FILE="$SCRIPT_DIR/models_to_mount_in_vllm.txt"
 
 # Already running
 if docker ps --filter name=gemma4-vllm --format '{{.Names}}' | grep -q gemma4-vllm; then
-  echo "Container already running."
   exit 0
 fi
 
 # Exists but stopped — restart it
 if docker ps -a --filter name=gemma4-vllm --format '{{.Names}}' | grep -q gemma4-vllm; then
-  echo "Restarting existing container..."
   docker start gemma4-vllm
-  echo "Container started."
   exit 0
 fi
 
-# Create new
-docker run -d --name gemma4-vllm \
+# Build volume mount flags from models_to_mount_in_vllm.txt
+VOLUME_ARGS="-v ~/.cache/huggingface:/root/.cache/huggingface"
+while IFS= read -r line; do
+  line="${line%%#*}"
+  line="$(echo "$line" | xargs)"
+  [ -z "$line" ] && continue
+  BASENAME="$(basename "$line")"
+  VOLUME_ARGS="$VOLUME_ARGS -v $line:/models/$BASENAME"
+done < "$MODELS_FILE"
+
+eval docker run -d --name gemma4-vllm \
   --ipc=host \
   --network host \
   --shm-size 16G \
   --gpus all \
   --entrypoint /bin/bash \
-  -v ~/.cache/huggingface:/root/.cache/huggingface \
-  -v /home/aikenyon/ai_skills_agents_resources/self-improve-experiments/gemma4_e4b_haiku50_ep16:/models/finetune \
+  $VOLUME_ARGS \
   vllm/vllm-openai:gemma4 \
-  -c "sleep infinity"
-echo "Container created. Use serve_model.sh to start serving a model."
+  -c \"sleep infinity\"

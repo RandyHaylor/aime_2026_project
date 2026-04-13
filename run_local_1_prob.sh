@@ -1,8 +1,10 @@
 #!/bin/bash
+set -e
 # Edit this default or pass a model path as argument
 DEFAULT_MODEL="/home/aikenyon/ai_skills_agents_resources/self-improve-experiments/checkpoints/grpo_ep10_merged"
 
 MODEL=${1:-$DEFAULT_MODEL}
+CONTAINER_MODEL=$(./vllm_docker_scripts/check_model_mounted.sh "$MODEL") || exit 1
 
 # Ensure docker container is running
 if ! docker ps --filter name=gemma4-vllm --format '{{.Names}}' | grep -q gemma4-vllm; then
@@ -11,7 +13,7 @@ if ! docker ps --filter name=gemma4-vllm --format '{{.Names}}' | grep -q gemma4-
 fi
 
 cat > /home/aikenyon/aime_2026_project/matharena/configs/models/local/runner.yaml <<EOF
-model: $MODEL
+model: $CONTAINER_MODEL
 api: custom
 api_key_env: null
 base_url: http://localhost:8000/v1
@@ -24,7 +26,7 @@ human_readable_id: $(basename "$MODEL")
 date: "2026-04-12"
 EOF
 
-./vllm_docker_scripts/serve_model.sh "$MODEL"
+./vllm_docker_scripts/switch_vllm_mounted_model.sh "$CONTAINER_MODEL"
 
 cd /home/aikenyon/aime_2026_project/matharena
 uv run python scripts/run.py --comp aime/aime_2026 --models local/runner --n 1 --problems 1

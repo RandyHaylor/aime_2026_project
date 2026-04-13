@@ -1,10 +1,7 @@
 #!/bin/bash
-# Usage: ./serve_model.sh <model_path>
-# Examples:
-#   ./serve_model.sh google/gemma-4-E4B-it
-#   ./serve_model.sh /models/finetune
+set -x
 
-MODEL=${1:?Usage: ./serve_model.sh <model_path>}
+MODEL=${1:?Usage: ./switch_vllm_mounted_model.sh <model_path>}
 
 # Check if this model is already serving
 if curl -s http://localhost:8000/health > /dev/null 2>&1; then
@@ -25,16 +22,28 @@ fi
 docker exec gemma4-vllm pkill -f "vllm serve" 2>/dev/null
 sleep 2
 
-# Start vllm with the requested model
-docker exec -d gemma4-vllm vllm serve "$MODEL" \
+# Start vllm in background inside container, tailing output to host
+docker exec gemma4-vllm bash -c "vllm serve '$MODEL' \
   --tensor-parallel-size 1 \
   --max-model-len 65536 \
   --gpu-memory-utilization 0.90 \
   --host 0.0.0.0 \
-  --port 8000
+  --port 8000 > /tmp/vllm.log 2>&1 &"
 
-echo "Starting $MODEL..."
+# Tail logs from inside the container until health check passes
+docker exec gemma4-vllm tail -f /tmp/vllm.log 2>/dev/null &
+TAIL_PID=$!
+
 until curl -s http://localhost:8000/health > /dev/null 2>&1; do
+  # Check if vllm process is still alive
+  if ! docker exec gemma4-vllm pgrep -f "vllm serve" > /dev/null 2>&1; then
+    echo ""
+    echo "ERROR: vllm process died. Check logs above."
+    kill $TAIL_PID 2>/dev/null
+    exit 1
+  fi
   sleep 5
 done
+
+kill $TAIL_PID 2>/dev/null
 echo "vllm server ready: $MODEL"

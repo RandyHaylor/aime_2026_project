@@ -1,0 +1,3 @@
+# Host paths to mount in vllm container as /models/<basename>
+# One path per line. Lines starting with # are ignored.
+/home/aikenyon/ai_skills_agents_resources/self-improve-experiments/checkpoints/grpo_ep10_merged
