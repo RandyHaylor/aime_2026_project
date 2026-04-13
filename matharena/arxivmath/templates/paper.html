@@ -1,0 +1,359 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{{ metadata.title or paper_id }}</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css" integrity="sha384-n8MVd4RsNIU0tAv4ct0nTaAbDJwPJzDEaqSD1odI+WdtXRGWt2kTvGFasHpSy3SV" crossorigin="anonymous" />
+    <style>
+      :root {
+        --bg: #f6f7f9;
+        --ink: #121417;
+        --muted: #5b636c;
+        --accent: #0f6a5f;
+        --accent-2: #f39c38;
+        --panel: #ffffff;
+        --line: #d4d9df;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        font-family: "IBM Plex Sans", "Segoe UI", Tahoma, sans-serif;
+        background:
+          radial-gradient(circle at 10% 20%, rgba(243, 156, 56, 0.15), transparent 45%),
+          radial-gradient(circle at 90% 0%, rgba(15, 106, 95, 0.18), transparent 40%),
+          linear-gradient(180deg, #fdfdfc 0%, var(--bg) 100%);
+        color: var(--ink);
+      }
+      .wrap {
+        max-width: 980px;
+        margin: 36px auto 72px;
+        padding: 0 20px;
+      }
+      header {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        gap: 16px;
+      }
+      h1 {
+        font-size: 2.2rem;
+        line-height: 1.2;
+        margin: 0 0 8px;
+      }
+      .meta {
+        color: var(--muted);
+        font-size: 0.95rem;
+      }
+      .panel {
+        background: var(--panel);
+        border: 1px solid #e6e9ed;
+        border-radius: 16px;
+        padding: 24px;
+        box-shadow: 0 18px 40px rgba(18, 20, 23, 0.08);
+      }
+      .section-title {
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        font-size: 0.8rem;
+        color: var(--muted);
+        margin: 24px 0 10px;
+      }
+      .authors {
+        margin: 0 0 12px;
+      }
+      .badge {
+        display: inline-block;
+        background: #eef4f3;
+        color: #33524d;
+        padding: 2px 8px;
+        border-radius: 999px;
+        font-size: 0.8rem;
+        margin-right: 6px;
+        margin-bottom: 6px;
+      }
+      form {
+        margin-top: 24px;
+        display: grid;
+        gap: 16px;
+      }
+      .row {
+        display: flex;
+        gap: 16px;
+        flex-wrap: wrap;
+      }
+      label {
+        font-weight: 700;
+      }
+      textarea {
+        width: 100%;
+        min-height: 120px;
+        resize: vertical;
+        padding: 10px;
+        border-radius: 10px;
+        border: 1px solid var(--line);
+        font-family: inherit;
+        font-size: 1rem;
+      }
+      select {
+        padding: 8px;
+        border-radius: 10px;
+        border: 1px solid #d4d9df;
+        font-family: inherit;
+        font-size: 1rem;
+      }
+      button {
+        background: var(--accent);
+        color: white;
+        border: none;
+        padding: 10px 18px;
+        border-radius: 999px;
+        font-size: 1rem;
+        cursor: pointer;
+        letter-spacing: 0.01em;
+      }
+      button:hover {
+        filter: brightness(0.95);
+      }
+      nav {
+        margin-top: 18px;
+        display: flex;
+        gap: 12px;
+        justify-content: space-between;
+      }
+      nav a {
+        color: var(--accent);
+        text-decoration: none;
+        font-weight: 700;
+      }
+      .muted {
+        color: var(--muted);
+      }
+      .content-text {
+        font-size: 1.05rem;
+        line-height: 1.6;
+      }
+      .meta a {
+        color: var(--accent);
+        text-decoration: none;
+      }
+      .editor-card {
+        display: grid;
+        gap: 10px;
+      }
+      .editable-box {
+        border: 1px solid #dde3e8;
+        border-radius: 14px;
+        background: linear-gradient(180deg, #fff 0%, #fbfcfd 100%);
+        padding: 18px;
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7);
+      }
+      .editable-display {
+        min-height: 84px;
+        white-space: pre-wrap;
+        line-height: 1.65;
+        font-size: 1.02rem;
+        cursor: text;
+      }
+      .editable-display.is-empty {
+        color: var(--muted);
+        font-style: italic;
+      }
+      .edit-shell {
+        display: none;
+        gap: 10px;
+      }
+      .edit-shell textarea {
+        min-height: 160px;
+        background: #fff;
+      }
+      .edit-shell.is-open {
+        display: grid;
+      }
+      .field-note {
+        color: var(--muted);
+        font-size: 0.92rem;
+      }
+      @media (max-width: 600px) {
+        h1 {
+          font-size: 1.6rem;
+        }
+        .editable-box {
+          padding: 15px;
+        }
+      }
+    </style>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;600;700&display=swap" />
+  </head>
+  <body>
+    <div class="wrap">
+      <header>
+        <div>
+          <div class="meta">Paper {{ position }} of {{ total }}</div>
+          <h1>{{ metadata.title or paper_id }}</h1>
+          <div class="authors">
+            {% for author in metadata.authors or [] %}
+              {{ author.forenames }} {{ author.keyname }}{% if not loop.last %}, {% endif %}
+            {% endfor %}
+          </div>
+          <div class="meta">
+            <span>{{ paper_id }}</span>
+            {% if metadata.categories %}
+              · <span>{{ metadata.categories | join(", ") }}</span>
+            {% endif %}
+            {% if metadata.created %}
+              · <span>Created {{ metadata.created }}</span>
+            {% endif %}
+            {% if metadata.updated %}
+              · <span>Updated {{ metadata.updated }}</span>
+            {% endif %}
+          </div>
+        </div>
+        <div>
+          <a href="https://arxiv.org/abs/{{ metadata.id }}" target="_blank" rel="noreferrer">Open arXiv</a>
+        </div>
+      </header>
+
+        <div class="panel content-text" id="paper-content">
+        <div class="section-title">Abstract</div>
+        <div>{{ metadata.abstract or "No abstract available." }}</div>
+
+        {% if metadata.comments %}
+          <div class="section-title">Comments</div>
+          <div>{{ metadata.comments }}</div>
+        {% endif %}
+
+        {% if metadata.journal_ref %}
+          <div class="section-title">Journal</div>
+          <div>{{ metadata.journal_ref }}</div>
+        {% endif %}
+
+        {% if metadata.license %}
+          <div class="section-title">License</div>
+          <div>{{ metadata.license }}</div>
+        {% endif %}
+
+        <form action="{{ url_for('annotate', paper_id=paper_id) }}" method="post">
+          <div class="row">
+            <button type="submit" name="status" value="keep">Keep and Next</button>
+            <button type="submit" name="status" value="discard">Reject</button>
+          </div>
+          {% for field in field_specs %}
+            <div class="editor-card">
+              <label for="{{ field.name }}">{{ field.label }}</label>
+              <div class="editable-box">
+                <div
+                  id="{{ field.name }}-preview"
+                  class="editable-display js-edit-preview"
+                  data-empty-text="{{ field.empty_text }}"
+                ></div>
+                <div id="{{ field.name }}-editor" class="edit-shell">
+                  <textarea id="{{ field.name }}" name="{{ field.name }}" placeholder="{{ field.placeholder }}" style="height: {{ field.height }}px">{{ annotation[field.name] or "" }}</textarea>
+                </div>
+              </div>
+              {% if loop.first %}
+                <div class="field-note">Click the rendered field to edit the raw text, then click away to return to preview.</div>
+              {% endif %}
+            </div>
+          {% endfor %}
+        </form>
+      </div>
+
+      <nav>
+        <div>
+          {% if prev_id %}
+            <a href="{{ url_for('paper_view', paper_id=prev_id) }}">Previous</a>
+          {% else %}
+            <span class="muted">Previous</span>
+          {% endif %}
+        </div>
+        <div>
+          {% if next_id %}
+            <a href="{{ url_for('skip_paper', paper_id=paper_id) }}">Skip</a>
+          {% else %}
+            <span class="muted">Skip</span>
+          {% endif %}
+        </div>
+      </nav>
+    </div>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"
+    integrity="sha384-XjKyOOlGwcjNTAIQHIpgOno0Hl1YQqzUOEleOLALmuqehneUG+vnGctmUb0ZY0l8"
+    crossorigin="anonymous"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"
+    integrity="sha384-+VBxd3r6XgURycqtZ117nYw44OOcIax56Z4dCRWbxyPt0Koah1uHoK0o4+/RRE05" crossorigin="anonymous"></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", () => {
+        const container = document.querySelector(".wrap");
+        const renderMath = (element) => {
+          if (!element || !window.renderMathInElement) return;
+          window.renderMathInElement(element, {
+            delimiters: [
+              { left: "$$", right: "$$", display: true },
+              { left: "$", right: "$", display: false },
+              { left: "\\(", right: "\\)", display: false },
+              { left: "\\[", right: "\\]", display: true },
+            ],
+            throwOnError: false,
+          });
+        };
+
+        const syncPreview = (textarea) => {
+          const preview = textarea
+            .closest(".editable-box")
+            ?.querySelector(".js-edit-preview");
+          if (!preview) return;
+          const raw = textarea.value.trim();
+          if (!raw) {
+            preview.textContent = preview.dataset.emptyText || "";
+            preview.classList.add("is-empty");
+            return;
+          }
+          preview.classList.remove("is-empty");
+          preview.textContent = raw;
+          renderMath(preview);
+        };
+
+        document.querySelectorAll(".edit-shell textarea").forEach((textarea) => {
+          syncPreview(textarea);
+          textarea.addEventListener("input", () => syncPreview(textarea));
+        });
+
+        document.querySelectorAll(".editable-box").forEach((box) => {
+          const preview = box.querySelector(".js-edit-preview");
+          const editor = box.querySelector(".edit-shell");
+          const textarea = box.querySelector("textarea");
+          if (!preview || !editor || !textarea) return;
+
+          const openEditor = () => {
+            if (editor.classList.contains("is-open")) return;
+            preview.style.display = "none";
+            editor.classList.add("is-open");
+            textarea.focus();
+            textarea.setSelectionRange(textarea.value.length, textarea.value.length);
+          };
+
+          const closeEditor = () => {
+            syncPreview(textarea);
+            editor.classList.remove("is-open");
+            preview.style.display = "";
+          };
+
+          preview.addEventListener("click", openEditor);
+          textarea.addEventListener("blur", closeEditor);
+          textarea.addEventListener("keydown", (event) => {
+            if (event.key === "Escape") {
+              event.preventDefault();
+              textarea.blur();
+            }
+          });
+        });
+
+        if (container) {
+          renderMath(container);
+        }
+      });
+    </script>
+  </body>
+</html>

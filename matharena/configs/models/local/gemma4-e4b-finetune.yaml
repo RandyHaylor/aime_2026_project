@@ -1,0 +1,16 @@
+model: /models/finetune
+api: custom
+api_key_env: null
+base_url: http://localhost:8000/v1
+max_tokens: 64000
+temperature: 0.6
+concurrent_requests: 1
+read_cost: 0
+write_cost: 0
+human_readable_id: gemma4-e4b-haiku50-ep16
+date: "2026-04-12"
+other_params:
+  open: true
+  creator: local
+  parameters: 4
+  active_parameters: 4
